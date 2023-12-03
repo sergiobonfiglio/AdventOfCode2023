@@ -1,4 +1,4 @@
-package day1
+package day2
 
 import (
 	"bufio"
@@ -47,11 +47,11 @@ func SolveDay() {
 
 	var input = readInput()
 
-	sol1 := solvePart1(input)
+	sol1, sol2 := solveParts(input)
 
 	fmt.Println("Part 1:", sol1)
 
-	fmt.Println("Part 2:", "")
+	fmt.Println("Part 2:", sol2)
 }
 
 type Set struct {
@@ -88,10 +88,11 @@ func newSet(s string) Set {
 	return res
 }
 
-func solvePart1(input []string) int {
+func solveParts(input []string) (int, int) {
 
 	sumPossible := 0
 
+	sumPower := 0
 	for game, row := range input {
 		rowparts := strings.Split(row, ":")
 
@@ -122,7 +123,9 @@ func solvePart1(input []string) int {
 			sumPossible += game + 1
 		}
 
+		sumPower += maxSet.blue * maxSet.green * maxSet.red
+
 	}
 
-	return sumPossible
+	return sumPossible, sumPower
 }

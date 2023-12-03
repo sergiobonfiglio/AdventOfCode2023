@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
+	"strings"
+	"unicode"
 )
 
-func readInput() [][]int {
+func readInput() []string {
 
 	readFile, err := os.Open("day1/input.txt")
 	if err != nil {
@@ -18,20 +19,14 @@ func readInput() [][]int {
 	fileScanner := bufio.NewScanner(readFile)
 	fileScanner.Split(bufio.ScanLines)
 
-	var data [][]int
+	var data []string
 
 	for fileScanner.Scan() {
 
-		var chunk []int
 		for fileScanner.Text() != "" {
-			cal, err := strconv.Atoi(fileScanner.Text())
-			if err != nil {
-				panic(err)
-			}
-			chunk = append(chunk, cal)
+			data = append(data, fileScanner.Text())
 			fileScanner.Scan()
 		}
-		data = append(data, chunk)
 
 	}
 
@@ -43,33 +38,100 @@ func readInput() [][]int {
 	return data
 }
 
+var digitMap = map[string]int{
+	"one":   1,
+	"two":   2,
+	"three": 3,
+	"four":  4,
+	"five":  5,
+	"six":   6,
+	"seven": 7,
+	"eight": 8,
+	"nine":  9,
+}
+
 func SolveDay() {
 
-	var calByElf = readInput()
+	var input = readInput()
 
-	var sums []int
-	var maxCal = 0
-	for _, cals := range calByElf {
+	sum := getSumFirstLastDigit(input)
 
-		var elfSum = 0
-		for _, cal := range cals {
-			elfSum += cal
+	fmt.Println("Part 1:", sum)
+
+	sum2 := getSumFirstLastDigitWords(input)
+	fmt.Println("Part 2:", sum2)
+}
+
+func getSumFirstLastDigit(input []string) int {
+	var sum int
+	for _, row := range input {
+
+		var first rune
+		for i := 0; i < len(row); i++ {
+			r := rune(row[i])
+			if unicode.IsDigit(r) {
+				first = r
+				break
+			}
 		}
-		sums = append(sums, elfSum)
 
-		if elfSum > maxCal {
-			maxCal = elfSum
+		var last rune
+		for i := len(row) - 1; i >= 0; i-- {
+			r := rune(row[i])
+			if unicode.IsDigit(r) {
+				last = r
+				break
+			}
 		}
+
+		val, err := strconv.Atoi(string(first) + string(last))
+		if err != nil {
+			panic("error")
+		}
+
+		sum += val
 	}
+	return sum
+}
 
-	fmt.Println("Part 1:", maxCal)
+func getSumFirstLastDigitWords(input []string) int {
+	var sum int
+	for _, row := range input {
 
-	sort.Sort(sort.Reverse(sort.IntSlice(sums)))
+		for digit, value := range digitMap {
+			if strings.Contains(row, digit) {
+				row = strings.Replace(
+					row,
+					digit,
+					string(digit[0])+strconv.Itoa(value)+string(digit[len(digit)-1]),
+					-1)
+			}
+		}
 
-	var top3 = 0
-	for i := 0; i < 3; i++ {
-		top3 += sums[i]
+		var first rune
+		for i := 0; i < len(row); i++ {
+			r := rune(row[i])
+			if unicode.IsDigit(r) {
+				first = r
+				break
+			}
+		}
+
+		var last rune
+		for i := len(row) - 1; i >= 0; i-- {
+			r := rune(row[i])
+			if unicode.IsDigit(r) {
+				last = r
+				break
+			}
+		}
+
+		val, err := strconv.Atoi(string(first) + string(last))
+		if err != nil {
+			panic("error")
+		}
+
+		sum += val
 	}
-
-	fmt.Println("Part 2:", top3)
+	return sum
 }
