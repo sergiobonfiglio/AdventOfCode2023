@@ -5,6 +5,7 @@ import (
 	"AdventOfCode2023/day2"
 	"AdventOfCode2023/day3"
 	"AdventOfCode2023/day4"
+	"AdventOfCode2023/day5"
 	"fmt"
 )
 
@@ -15,6 +16,7 @@ func main() {
 		day2.SolveDay,
 		day3.SolveDay,
 		day4.SolveDay,
+		day5.SolveDay,
 	}
 
 	for i, solver := range solvers {
