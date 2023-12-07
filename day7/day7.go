@@ -52,7 +52,6 @@ func SolveDay() {
 type Hand struct {
 	hand string
 	bid  int
-	rank int
 }
 
 var mappedCards = map[rune]int{
