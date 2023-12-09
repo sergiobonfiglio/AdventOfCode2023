@@ -1,4 +1,4 @@
-.PHONY: gen run test
+.PHONY: gen run test bench
 
 gen:
 	@if [ -n "$(DAY)" ]; then \
@@ -31,4 +31,13 @@ test:
         day=$$(ls | egrep "day[0-9]+$$" | \
             sed 's/^day*//g' | sort -nr | head -1); \
     fi; \
-	go test -v -count=1 ./day$$day
+	go test ./day$$day
+
+bench:
+	@if [ -n "$(DAY)" ]; then \
+        day=$(DAY); \
+    else \
+        day=$$(ls | egrep "day[0-9]+$$" | \
+            sed 's/^day*//g' | sort -nr | head -1); \
+    fi; \
+	go test -bench=. ./day$$day
