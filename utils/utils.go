@@ -45,3 +45,13 @@ func LCM[T int | int64](a, b T, integers ...T) T {
 
 	return result
 }
+
+func FilterNil[T any](x []*T) []*T {
+	var next []*T
+	for _, el := range x {
+		if el != nil {
+			next = append(next, el)
+		}
+	}
+	return next
+}
