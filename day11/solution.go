@@ -94,6 +94,10 @@ func part1(input string) any {
 func part2(input string) any {
 	return _part2(input, 1000000)
 }
+
+func part2Opt(input string) any {
+	return _part2Opt(input, 1000000)
+}
 func _part2(input string, expansion int) any {
 	var stars []*Pos
 	colsWithStars := map[int]bool{}
@@ -148,6 +152,80 @@ func _part2(input string, expansion int) any {
 					distShift += shiftAmt
 				}
 			}
+
+			sum += dist + distShift
+		}
+	}
+
+	return sum
+
+}
+
+func _part2Opt(input string, expansion int) any {
+	var stars []*Pos
+	colsWithStars := map[int]bool{}
+	rowsWithStars := map[int]bool{}
+
+	maxRow := 0
+	maxCol := 0
+	for r, line := range strings.Split(input, "\n") {
+
+		if line == "" {
+			continue
+		}
+		maxRow = r + 1
+		maxCol = len(line)
+
+		starsCount := 0
+		for c, s := range line {
+			if s == '#' {
+				starsCount++
+				stars = append(stars, &Pos{
+					r: r,
+					c: c,
+				})
+				rowsWithStars[r] = true
+				colsWithStars[c] = true
+			}
+		}
+
+	}
+
+	sum := 0
+	pairs := 0
+
+	shiftAmt := max(1, expansion-1)
+
+	var precompShiftR []int
+	cumShift := 0
+	for r := 0; r < maxRow; r++ {
+		if !rowsWithStars[r] {
+			cumShift += shiftAmt
+		}
+		precompShiftR = append(precompShiftR, cumShift)
+	}
+
+	var precompShiftC []int
+	cumShift = 0
+	for c := 0; c < maxCol; c++ {
+		if !colsWithStars[c] {
+			cumShift += shiftAmt
+		}
+		precompShiftC = append(precompShiftC, cumShift)
+	}
+
+	for i := 0; i < len(stars)-1; i++ {
+		for j := i + 1; j < len(stars); j++ {
+
+			pairs++
+			star1 := stars[i]
+			star2 := stars[j]
+			dist := star1.DistManhattan(star2)
+
+			minR, maxR := min(star1.r, star2.r), max(star1.r, star2.r)
+			minC, maxC := min(star1.c, star2.c), max(star1.c, star2.c)
+
+			distShift := precompShiftR[maxR] - precompShiftR[minR] + precompShiftC[maxC] - precompShiftC[minC]
 
 			sum += dist + distShift
 		}

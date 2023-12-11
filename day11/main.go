@@ -27,6 +27,7 @@ func main() {
 	if part == -1 {
 		fmt.Printf("Part 1: %v\n", part1(input))
 		fmt.Printf("Part 2: %v\n", part2(input))
+		fmt.Printf("Part 2 (opt): %v\n", part2Opt(input))
 	} else if part == 1 {
 		fmt.Printf("Part 1: %v\n", part1(input))
 	} else if part == 2 {
