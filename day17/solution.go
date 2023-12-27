@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
 	"math"
 	"slices"
 	"strconv"
@@ -37,52 +36,7 @@ func part1(input string) any {
 		return nil
 	}
 
-	fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
-	return minPath.Cost()
-}
-
-func part1_old(input string) any {
-	var matrix [][]int
-	r := 0
-	for _, line := range strings.Split(input, "\n") {
-
-		if line == "" {
-			continue
-		}
-
-		matrix = append(matrix, []int{})
-		for _, c := range line {
-			digit, err := strconv.Atoi(string(c))
-			if err != nil {
-				panic(-1)
-			}
-			matrix[r] = append(matrix[r], digit)
-		}
-		r++
-	}
-
-	graph := buildGraphOld(matrix)
-
-	//minPath := A_Star(graph)
-	//minPath := Dijkstra(graph)
-
-	paths := KShortestPaths(graph, 128, func(p *Path) bool {
-		return p.isValidForCrucibles()
-	})
-
-	minPath := paths[0]
-	for _, path := range paths {
-		if path.Cost() < minPath.Cost() {
-			tmp := path
-			minPath = tmp
-		}
-	}
-
-	if minPath == nil {
-		return nil
-	}
-
-	fmt.Printf("Path [%d]: %s\n", minPath.Cost(), minPath.toString())
+	//fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
 	return minPath.Cost()
 }
 
@@ -174,7 +128,7 @@ func part2(input string) any {
 		r++
 	}
 
-	graph := buildGraph2(matrix, 4, 10)
+	graph := buildGraph3(matrix, 4, 10)
 
 	minPath := Dijkstra(graph)
 
@@ -182,54 +136,8 @@ func part2(input string) any {
 		return nil
 	}
 
-	fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
+	//fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
 	return minPath.Cost()
-
-}
-func part2Old(input string) any {
-	var matrix [][]int
-	r := 0
-	for _, line := range strings.Split(input, "\n") {
-
-		if line == "" {
-			continue
-		}
-
-		matrix = append(matrix, []int{})
-		for _, c := range line {
-			digit, err := strconv.Atoi(string(c))
-			if err != nil {
-				panic(-1)
-			}
-			matrix[r] = append(matrix[r], digit)
-		}
-		r++
-	}
-
-	graph := buildGraphOld(matrix)
-
-	//minPath := A_Star(graph)
-	//minPath := Dijkstra(graph)
-
-	paths := KShortestPaths(graph, 128, func(p *Path) bool {
-		return p.isValidForUltraCrucibles(graph.Dst)
-	})
-
-	minPath := paths[0]
-	for _, path := range paths {
-		if path.Cost() < minPath.Cost() {
-			tmp := path
-			minPath = tmp
-		}
-	}
-
-	if minPath == nil {
-		return nil
-	}
-
-	fmt.Printf("Path [%d]: %s\n", minPath.Cost(), minPath.toString())
-	return minPath.Cost()
-
 }
 
 func getPathFromEdge(v *Vertex, prev map[VertexKey]*Edge) *Path {
@@ -461,6 +369,123 @@ func buildGraph2(matrix [][]int, minStraight, maxStraight int) *Graph {
 		Src:      startV,
 		Dst:      endV,
 		Vertices: vertices,
+	}
+}
+func buildGraph3(matrix [][]int, minStraight, maxStraight int) *Graph {
+
+	vMap := map[string]*Vertex{}
+
+	for r := 0; r < len(matrix); r++ {
+		for c := 0; c < len(matrix[0]); c++ {
+			if r != 0 || c != 0 {
+				for z := minStraight; z <= maxStraight; z++ {
+					for _, d := range DIRS {
+						k := rczKey(r, c, z, d)
+						vMap[k] = &Vertex{R: r, C: c, Label: k, Z: z, D: d}
+					}
+				}
+			}
+		}
+	}
+
+	lastR := len(matrix) - 1
+	lastC := len(matrix[0]) - 1
+	for r := 0; r < len(matrix); r++ {
+		for c := 0; c < len(matrix[0]); c++ {
+			isStart := r == 0 && c == 0
+			isEnd := r == lastR && c == lastC
+			if !isStart && !isEnd {
+				for z := minStraight; z <= maxStraight; z++ {
+					for _, d := range DIRS {
+						k := rczKey(r, c, z, d)
+						currV := vMap[k]
+
+						addEdgesWithMin(matrix, vMap, currV, minStraight, maxStraight)
+					}
+
+				}
+
+			}
+
+		}
+	}
+	//connect starting node (special case)
+	startV := &Vertex{R: 0, C: 0, Label: rczKey(0, 0, 0, '*')}
+	addEdgesWithMin(matrix, vMap, startV, minStraight, maxStraight)
+
+	//add fake end node reachable with 0 weight from all other directional ending nodes
+	endV := &Vertex{R: lastR, C: lastC,
+		Label: rczKey(lastR, lastC, 0, '*')}
+	for z := minStraight; z <= maxStraight; z++ {
+		for _, d := range DIRS {
+			k := rczKey(lastR, lastC, z, d)
+			currV := vMap[k]
+			*currV = currV.AddEdge(endV, 0, '#')
+		}
+	}
+
+	vertices := []*Vertex{startV, endV}
+	for _, v := range vMap {
+		vertices = append(vertices, v)
+	}
+
+	return &Graph{
+		Src:      startV,
+		Dst:      endV,
+		Vertices: vertices,
+	}
+}
+
+func addEdgesWithMin(matrix [][]int, vMap map[string]*Vertex, currV *Vertex, minStraight, maxStraight int) {
+
+	r, c, d, z := currV.R, currV.C, currV.D, currV.Z
+
+	for _, d2 := range DIRS {
+
+		if !areOpposite(d, d2) {
+
+			for i := minStraight; i <= maxStraight; i++ {
+
+				nextZ := i
+				if d == d2 {
+					nextZ = z + i // will not exist if it exceeds maxStraight
+					if nextZ > maxStraight {
+						continue
+					}
+				}
+
+				var nextVKey string
+				nextW := 0
+				if d2 == '^' {
+					nextVKey = rczKey(r-i, c, nextZ, d2)
+					for j := 1; j <= i && r-j >= 0; j++ {
+						nextW += matrix[r-j][c]
+					}
+				} else if d2 == 'v' {
+					nextVKey = rczKey(r+i, c, nextZ, d2)
+					for j := 1; j <= i && r+j < len(matrix); j++ {
+						nextW += matrix[r+j][c]
+					}
+				} else if d2 == '>' {
+					nextVKey = rczKey(r, c+i, nextZ, d2)
+					for j := 1; j <= i && c+j < len(matrix[0]); j++ {
+						nextW += matrix[r][c+j]
+					}
+				} else if d2 == '<' {
+					nextVKey = rczKey(r, c-i, nextZ, d2)
+					for j := 1; j <= i && c-j >= 0; j++ {
+						nextW += matrix[r][c-j]
+					}
+				}
+
+				if nextV, found := vMap[nextVKey]; found {
+					*currV = currV.AddEdge(nextV, nextW, d2)
+				}
+
+			}
+
+		}
+
 	}
 }
 

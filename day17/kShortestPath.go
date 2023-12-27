@@ -52,7 +52,8 @@ func (p Path) Dest() *Vertex {
 func (p Path) toString2() string {
 	var n []string
 	for _, e := range p.edges {
-		n = append(n, fmt.Sprintf("%s", string(e.Dir)))
+		length := int(max(math.Abs(float64(e.Src.R-e.Dst.R)), math.Abs(float64(e.Src.C-e.Dst.C))))
+		n = append(n, fmt.Sprintf("%s", strings.Repeat(string(e.Dir), length)))
 	}
 
 	pathStr := strings.Join(n, "")
