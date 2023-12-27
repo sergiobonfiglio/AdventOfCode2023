@@ -520,25 +520,3 @@ func addEdges(matrix [][]int, vMap map[string]*Vertex, currV *Vertex) {
 
 	}
 }
-
-type Cell struct {
-	R int
-	C int
-}
-
-func (p *Cell) Up() {
-	p.R--
-}
-func (p *Cell) Down() {
-	p.R++
-}
-func (p *Cell) Left() {
-	p.C--
-}
-func (p *Cell) Right() {
-	p.C++
-}
-
-func (p *Cell) IsInside(rowLen, colLen int) bool {
-	return p.R >= 0 && p.R < rowLen && p.C >= 0 && p.C < colLen
-}
