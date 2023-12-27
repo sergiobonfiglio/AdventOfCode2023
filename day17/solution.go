@@ -29,7 +29,39 @@ func part1(input string) any {
 		r++
 	}
 
-	graph := buildGraph(matrix)
+	graph := buildGraph2(matrix, 1, 3)
+
+	minPath := Dijkstra(graph)
+
+	if minPath == nil {
+		return nil
+	}
+
+	fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
+	return minPath.Cost()
+}
+
+func part1_old(input string) any {
+	var matrix [][]int
+	r := 0
+	for _, line := range strings.Split(input, "\n") {
+
+		if line == "" {
+			continue
+		}
+
+		matrix = append(matrix, []int{})
+		for _, c := range line {
+			digit, err := strconv.Atoi(string(c))
+			if err != nil {
+				panic(-1)
+			}
+			matrix[r] = append(matrix[r], digit)
+		}
+		r++
+	}
+
+	graph := buildGraphOld(matrix)
 
 	//minPath := A_Star(graph)
 	//minPath := Dijkstra(graph)
@@ -142,7 +174,39 @@ func part2(input string) any {
 		r++
 	}
 
-	graph := buildGraph(matrix)
+	graph := buildGraph2(matrix, 4, 10)
+
+	minPath := Dijkstra(graph)
+
+	if minPath == nil {
+		return nil
+	}
+
+	fmt.Printf("Path [%d]: %s\n\n%s\n", minPath.Cost(), minPath.toString2(), minPath.toString())
+	return minPath.Cost()
+
+}
+func part2Old(input string) any {
+	var matrix [][]int
+	r := 0
+	for _, line := range strings.Split(input, "\n") {
+
+		if line == "" {
+			continue
+		}
+
+		matrix = append(matrix, []int{})
+		for _, c := range line {
+			digit, err := strconv.Atoi(string(c))
+			if err != nil {
+				panic(-1)
+			}
+			matrix[r] = append(matrix[r], digit)
+		}
+		r++
+	}
+
+	graph := buildGraphOld(matrix)
 
 	//minPath := A_Star(graph)
 	//minPath := Dijkstra(graph)
@@ -166,27 +230,6 @@ func part2(input string) any {
 	fmt.Printf("Path [%d]: %s\n", minPath.Cost(), minPath.toString())
 	return minPath.Cost()
 
-}
-
-func getPrevDirs(curr *Vertex, prev map[*Vertex]*Edge) map[rune]int {
-	dirMap := map[rune]int{}
-	var prevEdges []*Edge
-
-	currPrev := prev[curr]
-	if currPrev != nil {
-		for i := 0; i < 3; i++ {
-			e := prev[currPrev.Src]
-			if e == nil {
-				break
-			}
-			dirMap[e.Dir]++
-			prevEdges = append(prevEdges, e)
-			currPrev = e
-		}
-
-	}
-
-	return dirMap
 }
 
 func getPathFromEdge(v *Vertex, prev map[VertexKey]*Edge) *Path {
@@ -241,11 +284,7 @@ func Dijkstra(graph *Graph) *Path {
 				if alt < dist[v.Key()] {
 
 					prev[v.Key()] = edge
-					path := getPathFromEdge(v, prev)
-					if !path.isValidForCrucibles() {
-						prev[v.Key()] = nil
-						continue
-					}
+
 					vItem := pq.lut[v.getKey()]
 					vItem.priority = alt
 					heap.Fix(pq, vItem.index)
@@ -270,12 +309,15 @@ type Vertex struct {
 	R     int
 	C     int
 	Edges []*Edge
+	Label string
+	Z     int
+	D     rune
 }
 
 type VertexKey string
 
 func (v Vertex) Key() VertexKey {
-	return VertexKey(strconv.Itoa(v.R) + "_" + strconv.Itoa(v.C))
+	return VertexKey(v.Label)
 }
 func (v Vertex) Equals(v2 *Vertex) bool {
 	return v.R == v2.R && v.C == v2.C
@@ -292,6 +334,9 @@ func (v Vertex) AddEdge(v2 *Vertex, weight int, dir rune) Vertex {
 		R:     v.R,
 		C:     v.C,
 		Edges: edges,
+		Label: rczKey(v.R, v.C, v.Z, v.D),
+		Z:     v.Z,
+		D:     v.D,
 	}
 }
 
@@ -305,7 +350,7 @@ type Edge struct {
 func rcKey(r, c int) string {
 	return strconv.Itoa(r) + "_" + strconv.Itoa(c)
 }
-func buildGraph(matrix [][]int) *Graph {
+func buildGraphOld(matrix [][]int) *Graph {
 
 	vMap := map[string]*Vertex{}
 
@@ -345,6 +390,109 @@ func buildGraph(matrix [][]int) *Graph {
 		Src:      vMap[rcKey(0, 0)],
 		Dst:      vMap[rcKey(len(matrix)-1, len(matrix[0])-1)],
 		Vertices: vertices,
+	}
+}
+
+func rczKey(r, c, z int, p rune) string {
+	return strconv.Itoa(r) + "_" + strconv.Itoa(c) + "_" + strconv.Itoa(z) + "_" + string(p)
+}
+
+var DIRS = []rune{'>', '<', '^', 'v'}
+
+func buildGraph2(matrix [][]int, minStraight, maxStraight int) *Graph {
+
+	vMap := map[string]*Vertex{}
+
+	for r := 0; r < len(matrix); r++ {
+		for c := 0; c < len(matrix[0]); c++ {
+			if r != 0 || c != 0 {
+				for z := minStraight; z <= maxStraight; z++ {
+					for _, d := range DIRS {
+						k := rczKey(r, c, z, d)
+						vMap[k] = &Vertex{R: r, C: c, Label: k, Z: z, D: d}
+					}
+				}
+			}
+		}
+	}
+
+	lastR := len(matrix) - 1
+	lastC := len(matrix[0]) - 1
+	for r := 0; r < len(matrix); r++ {
+		for c := 0; c < len(matrix[0]); c++ {
+			isStart := r == 0 && c == 0
+			isEnd := r == lastR && c == lastC
+			if !isStart && !isEnd {
+				for z := minStraight; z <= maxStraight; z++ {
+					for _, d := range DIRS {
+						k := rczKey(r, c, z, d)
+						currV := vMap[k]
+
+						addEdges(matrix, vMap, currV)
+					}
+
+				}
+
+			}
+
+		}
+	}
+	//connect starting node (special case)
+	startV := &Vertex{R: 0, C: 0, Label: rczKey(0, 0, 0, '*')}
+	addEdges(matrix, vMap, startV)
+
+	//add fake end node reachable with 0 weight from all other directional ending nodes
+	endV := &Vertex{R: lastR, C: lastC,
+		Label: rczKey(lastR, lastC, 0, '*')}
+	for z := minStraight; z <= maxStraight; z++ {
+		for _, d := range DIRS {
+			k := rczKey(lastR, lastC, z, d)
+			currV := vMap[k]
+			*currV = currV.AddEdge(endV, 0, '#')
+		}
+	}
+
+	vertices := []*Vertex{startV, endV}
+	for _, v := range vMap {
+		vertices = append(vertices, v)
+	}
+
+	return &Graph{
+		Src:      startV,
+		Dst:      endV,
+		Vertices: vertices,
+	}
+}
+
+func addEdges(matrix [][]int, vMap map[string]*Vertex, currV *Vertex) {
+
+	r, c, d, z := currV.R, currV.C, currV.D, currV.Z
+
+	for _, d2 := range DIRS {
+
+		if !areOpposite(d, d2) {
+
+			nextZ := 1
+			if d == d2 {
+				nextZ = z + 1 // will not exist if it exceeds maxStraight
+			}
+
+			var nextVKey string
+			if d2 == '^' {
+				nextVKey = rczKey(r-1, c, nextZ, d2)
+			} else if d2 == 'v' {
+				nextVKey = rczKey(r+1, c, nextZ, d2)
+			} else if d2 == '>' {
+				nextVKey = rczKey(r, c+1, nextZ, d2)
+			} else if d2 == '<' {
+				nextVKey = rczKey(r, c-1, nextZ, d2)
+			}
+
+			if nextV, found := vMap[nextVKey]; found {
+				*currV = currV.AddEdge(nextV, matrix[nextV.R][nextV.C], d2)
+			}
+		}
+
 	}
 }
 

@@ -49,6 +49,15 @@ func (p Path) Dest() *Vertex {
 	return p.edges[len(p.edges)-1].Dst
 }
 
+func (p Path) toString2() string {
+	var n []string
+	for _, e := range p.edges {
+		n = append(n, fmt.Sprintf("%s", string(e.Dir)))
+	}
+
+	pathStr := strings.Join(n, "")
+	return pathStr
+}
 func (p Path) toString() string {
 	var n []string
 	for _, e := range p.edges {
